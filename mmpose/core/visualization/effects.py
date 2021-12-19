@@ -145,8 +145,8 @@ def apply_firecracker_effect(img,
         if kpts[left_wrist_idx, 2] > kpt_thr:
             kpt_lwrist = kpts[left_wrist_idx, :2]
             # anchor points in the image by eye positions
-            pts_tar = np.vstack([kpt_lwrist - [w_tar / 2, 0], kpt_lwrist + [w_tar / 2, 0],
-                                 kpt_lwrist - [w_tar / 2, h_tar] , kpt_lwrist + [w_tar / 2, -h_tar]])
+            pts_tar = np.vstack([kpt_lwrist - [w_tar / 2, 0], kpt_lwrist - [w_tar / 2, -h_tar],
+                                 kpt_lwrist + [w_tar / 2, 0], kpt_lwrist + [w_tar / 2, h_tar]])
 
             h_mat, _ = cv2.findHomography(pts_src, pts_tar)
             patch = cv2.warpPerspective(
@@ -163,8 +163,8 @@ def apply_firecracker_effect(img,
             kpt_rwrist = kpts[right_wrist_idx, :2]
 
             # anchor points in the image by eye positions
-            pts_tar = np.vstack([kpt_rwrist - [w_tar / 2, 0], kpt_rwrist + [w_tar / 2, 0],
-                                 kpt_rwrist - [w_tar / 2, h_tar], kpt_rwrist + [w_tar / 2, -h_tar]])
+            pts_tar = np.vstack([kpt_rwrist - [w_tar / 2, 0], kpt_rwrist - [w_tar / 2, -h_tar],
+                                 kpt_rwrist + [w_tar / 2, 0], kpt_rwrist + [w_tar / 2, h_tar]])
 
             h_mat, _ = cv2.findHomography(pts_src, pts_tar)
             patch = cv2.warpPerspective(

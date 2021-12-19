@@ -242,8 +242,14 @@ class FirecrackerNode(BaseFrameEffectNode):
         super().__init__(name, frame_buffer, output_buffer, enable_key)
 
         if src_img_path is None:
-            src_img_path = 'demo/resources/firecracker.gif'
-        self.src_img = Image.open(src_img_path)
+            self.src_img_path = 'demo/resources/firecracker.gif'
+        self.src_img = cv2.VideoCapture(self.src_img_path)
+        self.frame_list = []
+        # ret, frame = self.src_img.read()
+        # while frame is not None:
+        #     self.frame_list.append(frame)
+        #     ret, frame = self.src_img.read()
+        # self.frame_count = 0
 
     def draw(self, frame_msg):
         canvas = frame_msg.get_image()
@@ -255,7 +261,11 @@ class FirecrackerNode(BaseFrameEffectNode):
             preds = pose_result['preds']
             left_wrist_idx, right_wrist_idx = _get_wrist_keypoint_ids(model.cfg)
 
-            canvas = apply_firecracker_effect(canvas, preds, ImageSequence.Iterator(self.src_img)[0],
+            ret, frame = self.src_img.read()
+            if ret == False:
+                self.src_img = cv2.VideoCapture(self.src_img_path)
+                ret, frame = self.src_img.read()
+            canvas = apply_firecracker_effect(canvas, preds, frame,
                                              left_wrist_idx, right_wrist_idx)
         return canvas
 
