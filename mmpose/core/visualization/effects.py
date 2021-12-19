@@ -109,3 +109,72 @@ def apply_sunglasses_effect(img,
         img = cv2.copyTo(patch, mask, img)
 
     return img
+
+
+def apply_firecracker_effect(img,
+                            pose_results,
+                            firecracker_img,
+                            left_wrist_idx,
+                            right_wrist_idx,
+                            kpt_thr=0.5):
+    """Apply sunglasses effect.
+
+    Args:
+        img (np.ndarray): Image data.
+        pose_results (list[dict]): The pose estimation results containing:
+            - "keypoints" ([K,3]): keypoint detection result in [x, y, score]
+        firecracker_img (np.ndarray): Firecracker image with white background.
+        left_wrist_idx (int): Keypoint index of left wrist
+        right_wrist_idx (int): Keypoint index of right wrist
+        kpt_thr (float): The score threshold of required keypoints.
+    """
+
+    hm, wm = firecracker_img.shape[:2]
+    # anchor points in the firecracker mask
+    pts_src = np.array([[0.3 * wm, 0.1 * hm], [0.3 * wm, 0.9 * hm],
+                        [0.7 * wm, 0.1 * hm], [0.7 * wm, 0.9 * hm]],
+                       dtype=np.float32)
+
+    h, w = img.shape[:2]
+    h_tar = h / 3
+    w_tar = h_tar / 2
+
+    for pose in pose_results:
+        kpts = pose['keypoints']
+
+        if kpts[left_wrist_idx, 2] > kpt_thr:
+            kpt_lwrist = kpts[left_wrist_idx, :2]
+            # anchor points in the image by eye positions
+            pts_tar = np.vstack([kpt_lwrist - [w_tar / 2, 0], kpt_lwrist + [w_tar / 2, 0],
+                                 kpt_lwrist - [w_tar / 2, h_tar] , kpt_lwrist + [w_tar / 2, -h_tar]])
+
+            h_mat, _ = cv2.findHomography(pts_src, pts_tar)
+            patch = cv2.warpPerspective(
+                firecracker_img,
+                h_mat,
+                dsize=(img.shape[1], img.shape[0]),
+                borderValue=(255, 255, 255))
+            #  mask the white background area in the patch with a threshold 200
+            mask = cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY)
+            mask = (mask < 200).astype(np.uint8)
+            img = cv2.copyTo(patch, mask, img)
+
+        if kpts[right_wrist_idx, 2] > kpt_thr:
+            kpt_rwrist = kpts[right_wrist_idx, :2]
+
+            # anchor points in the image by eye positions
+            pts_tar = np.vstack([kpt_rwrist - [w_tar / 2, 0], kpt_rwrist + [w_tar / 2, 0],
+                                 kpt_rwrist - [w_tar / 2, h_tar], kpt_rwrist + [w_tar / 2, -h_tar]])
+
+            h_mat, _ = cv2.findHomography(pts_src, pts_tar)
+            patch = cv2.warpPerspective(
+                firecracker_img,
+                h_mat,
+                dsize=(img.shape[1], img.shape[0]),
+                borderValue=(255, 255, 255))
+            #  mask the white background area in the patch with a threshold 200
+            mask = cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY)
+            mask = (mask < 200).astype(np.uint8)
+            img = cv2.copyTo(patch, mask, img)
+
+    return img
