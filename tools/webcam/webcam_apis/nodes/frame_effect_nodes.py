@@ -7,8 +7,8 @@ import numpy as np
 from mmcv import Config, color_val
 
 from mmpose.apis import vis_pose_result
-from mmpose.core import (apply_bugeye_effect, apply_hat_effect,
-                         apply_sunglasses_effect)
+from mmpose.core import (apply_bugeye_effect, apply_firecracker_effect,
+                         apply_hat_effect, apply_sunglasses_effect)
 from mmpose.datasets import DatasetInfo
 from ..utils import FrameMessage, Message
 from .builder import NODES
@@ -60,6 +60,43 @@ def _get_eye_keypoint_ids(model_cfg: Config) -> Tuple[int, int]:
                              f'{dataset_name}')
 
     return left_eye_idx, right_eye_idx
+
+
+def _get_wrist_keypoint_ids(model_cfg: Config) -> Tuple[int, int]:
+    """A helpfer function to get the keypoint indices of left and right wrist
+    from the model config.
+
+    Args:
+        model_cfg (Config): pose model config.
+
+    Returns:
+        int: left wrist keypoint index.
+        int: right wrist keypoint index.
+    """
+
+    # try obtaining eye point ids from dataset_info
+    try:
+        dataset_info = DatasetInfo(model_cfg.data.test.dataset_info)
+        left_wrist_idx = dataset_info.keypoint_name2id.get('left_wrist', None)
+        right_wrist_idx = dataset_info.keypoint_name2id.get(
+            'right_wrist', None)
+    except AttributeError:
+        left_wrist_idx = None
+        right_wrist_idx = None
+
+    if left_wrist_idx is None or right_wrist_idx is None:
+        # Fall back to hard coded keypoint id
+        dataset_name = model_cfg.data.test.type
+        if dataset_name in {
+                'TopDownCocoDataset', 'TopDownCocoWholeBodyDataset'
+        }:
+            left_wrist_idx = 9
+            right_wrist_idx = 10
+        else:
+            raise ValueError('Can not determine the eye keypoint id of '
+                             f'{dataset_name}')
+
+    return left_wrist_idx, right_wrist_idx
 
 
 class BaseFrameEffectNode(Node):
@@ -307,4 +344,46 @@ class HatNode(BaseFrameEffectNode):
 
             canvas = apply_hat_effect(canvas, preds, self.src_img,
                                       left_eye_idx, right_eye_idx)
+        return canvas
+
+
+@NODES.register_module()
+class FirecrackerNode(BaseFrameEffectNode):
+
+    def __init__(self,
+                 name: str,
+                 frame_buffer: str,
+                 output_buffer: Union[str, List[str]],
+                 enable_key: Optional[Union[str, int]] = None,
+                 src_img_path: Optional[str] = None):
+
+        super().__init__(name, frame_buffer, output_buffer, enable_key)
+
+        if src_img_path is None:
+            self.src_img_path = 'demo/resources/firecracker.gif'
+        self.src_img = cv2.VideoCapture(self.src_img_path)
+        self.frame_list = []
+        # ret, frame = self.src_img.read()
+        # while frame is not None:
+        #     self.frame_list.append(frame)
+        #     ret, frame = self.src_img.read()
+        # self.frame_count = 0
+
+    def draw(self, frame_msg):
+        canvas = frame_msg.get_image()
+        pose_results = frame_msg.get_pose_results()
+        if not pose_results:
+            return canvas
+        for pose_result in pose_results:
+            model = pose_result['model_ref']()
+            preds = pose_result['preds']
+            left_wrist_idx, right_wrist_idx = _get_wrist_keypoint_ids(
+                model.cfg)
+
+            ret, frame = self.src_img.read()
+            if not ret:
+                self.src_img = cv2.VideoCapture(self.src_img_path)
+                ret, frame = self.src_img.read()
+            canvas = apply_firecracker_effect(canvas, preds, frame,
+                                              left_wrist_idx, right_wrist_idx)
         return canvas

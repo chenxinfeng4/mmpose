@@ -14,8 +14,8 @@ runner = dict(
     #   - '_input_': reserved buffer that stores video frames for model input
     #   - '_display_': reserved buffer that stores output frames for display
     user_buffers=[
-        'det_result', 'pose_result', 'frame', 'vis_pose', 'vis_hat', 'vis_sunglasses',
-        'vis_bugeye', 'vis'
+        'det_result', 'pose_result', 'frame', 'vis_pose', 'vis_hat',
+        'vis_firecracker', 'vis_sunglasses', 'vis_bugeye', 'vis'
     ],
 
     # Define nodes.
@@ -78,8 +78,8 @@ runner = dict(
             enable_key='v',
             frame_buffer='frame',
             output_buffer='vis_pose'),
-        # 'SunglassesNode':
-        # This node draw the gat effect in the frame image.
+        # 'HatNode':
+        # This node draw the hat effect in the frame image.
         # Pose results is needed.
         dict(
             type='HatNode',
@@ -87,6 +87,15 @@ runner = dict(
             enable_key='t',
             frame_buffer='vis_pose',
             output_buffer='vis_hat'),
+        # 'FirecrackerNode':
+        # This node draw the firecracker effect in the frame image.
+        # Pose results is needed.
+        dict(
+            type='FirecrackerNode',
+            name='Visualizer',
+            enable_key='f',
+            frame_buffer='vis_hat',
+            output_buffer='vis_firecracker'),
         # 'SunglassesNode':
         # This node draw the sunglasses effetc in the frame image.
         # Pose results is needed.
@@ -94,10 +103,10 @@ runner = dict(
             type='SunglassesNode',
             name='Visualizer',
             enable_key='s',
-            frame_buffer='vis_hat',
+            frame_buffer='vis_firecracker',
             output_buffer='vis_sunglasses'),
         # 'BugEyeNode':
-        # This node draw the bug-eye effetc in the frame image.
+        # This node draw the bug-eye effect in the frame image.
         # Pose results is needed.
         dict(
             type='BugEyeNode',
@@ -118,8 +127,8 @@ runner = dict(
                 'This is a demo for pose visualization and simple image '
                 'effects. Have fun!', '', 'Hot-keys:',
                 '"v": Pose estimation result visualization',
-                '"h": Hat effect',
                 '"s": Sunglasses effect B-)', '"b": Bug-eye effect 0_0',
+                '"t": Hat effect', '"f": Firecracker effect',
                 '"h": Show help information',
                 '"m": Show diagnostic information', '"q": Exit'
             ],
