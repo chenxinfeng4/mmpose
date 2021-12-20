@@ -109,3 +109,74 @@ def apply_sunglasses_effect(img,
         img = cv2.copyTo(patch, mask, img)
 
     return img
+
+
+def apply_hat_effect(img,
+                     pose_results,
+                     hat_img,
+                     left_eye_index,
+                     right_eye_index,
+                     kpt_thr=0.5):
+    """Apply sunglasses effect.
+
+    Args:
+        img (np.ndarray): Image data.
+        pose_results (list[dict]): The pose estimation results containing:
+            - "keypoints" ([K,3]): keypoint detection result in [x, y, score]
+        hat_img (np.ndarray): Hat image with white background.
+        left_eye_index (int): Keypoint index of left eye
+        right_eye_index (int): Keypoint index of right eye
+        kpt_thr (float): The score threshold of required keypoints.
+    """
+    img_orig = img.copy()
+
+    img = img_orig.copy()
+    hm, wm = hat_img.shape[:2]
+    # anchor points in the sunglasses mask
+    a = 0.3
+    b = 0.7
+    pts_src = np.array([[a * wm, a * hm], [a * wm, b * hm], [b * wm, a * hm],
+                        [b * wm, b * hm]],
+                       dtype=np.float32)
+
+    for pose in pose_results:
+        kpts = pose['keypoints']
+
+        if kpts[left_eye_index, 2] < kpt_thr or kpts[right_eye_index,
+                                                     2] < kpt_thr:
+            continue
+
+        kpt_leye = kpts[left_eye_index, :2]
+        kpt_reye = kpts[right_eye_index, :2]
+        # orthogonal vector to the left-to-right eyes
+        vo = 0.5 * (kpt_reye - kpt_leye)[::-1] * [-1, 1]
+        veye = 0.5 * (kpt_reye - kpt_leye)
+
+        # anchor points in the image by eye positions
+        pts_tar = np.vstack([
+            kpt_reye + 1 * veye + 5 * vo, kpt_reye + 1 * veye + 1 * vo,
+            kpt_leye - 1 * veye + 5 * vo, kpt_leye - 1 * veye + 1 * vo
+        ])
+
+        h_mat, _ = cv2.findHomography(pts_src, pts_tar)
+        patch = cv2.warpPerspective(
+            hat_img,
+            h_mat,
+            dsize=(img.shape[1], img.shape[0]),
+            borderValue=(255, 255, 255))
+        #  mask the white background area in the patch with a threshold 200
+        mask = (patch[:, :, -1] > 128)
+        patch = patch[:, :, :-1]
+        mask = mask * (cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY) > 30)
+
+        mask = mask.astype(np.uint8)
+
+        # mask = cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY)
+        # mask = (mask < 255).astype(np.uint8)
+        img = cv2.copyTo(patch, mask, img)
+
+    # import matplotlib.pyplot as plt
+    # plt.imshow(img[:, :, ::-1])
+    # t = 0
+
+    return img

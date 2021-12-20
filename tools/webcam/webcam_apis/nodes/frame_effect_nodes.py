@@ -7,7 +7,8 @@ import numpy as np
 from mmcv import Config, color_val
 
 from mmpose.apis import vis_pose_result
-from mmpose.core import apply_bugeye_effect, apply_sunglasses_effect
+from mmpose.core import (apply_bugeye_effect, apply_hat_effect,
+                         apply_sunglasses_effect)
 from mmpose.datasets import DatasetInfo
 from ..utils import FrameMessage, Message
 from .builder import NODES
@@ -274,3 +275,36 @@ class BillboardNode(BaseFrameEffectNode):
         img[y1:y2, x1:x2] = cv2.addWeighted(src1, 0.5, src2, 0.5, 0)
 
         return img
+
+
+@NODES.register_module()
+class HatNode(BaseFrameEffectNode):
+
+    def __init__(self,
+                 name: str,
+                 frame_buffer: str,
+                 output_buffer: Union[str, List[str]],
+                 enable_key: Optional[Union[str, int]] = None,
+                 src_img_path: Optional[str] = None):
+
+        super().__init__(name, frame_buffer, output_buffer, enable_key)
+
+        if src_img_path is None:
+            # The image attributes to:
+            # http://616pic.com/sucai/1m9i70p52.html
+            src_img_path = 'demo/resources/hat.png'
+        self.src_img = cv2.imread(src_img_path, cv2.IMREAD_UNCHANGED)
+
+    def draw(self, frame_msg):
+        canvas = frame_msg.get_image()
+        pose_results = frame_msg.get_pose_results()
+        if not pose_results:
+            return canvas
+        for pose_result in pose_results:
+            model = pose_result['model_ref']()
+            preds = pose_result['preds']
+            left_eye_idx, right_eye_idx = _get_eye_keypoint_ids(model.cfg)
+
+            canvas = apply_hat_effect(canvas, preds, self.src_img,
+                                      left_eye_idx, right_eye_idx)
+        return canvas
