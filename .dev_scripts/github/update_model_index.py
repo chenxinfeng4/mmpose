@@ -105,6 +105,7 @@ def collect_paper_readme():
     link_prefix = 'https://github.com/open-mmlab/mmpose/blob/master/'
 
     readme_files = glob.glob(osp.join('docs/en/papers/*/*.md'))
+    readme_files.sort()
     collection2readme = {}
 
     for readme_file in readme_files:
@@ -146,6 +147,7 @@ def parse_config_path(path):
         '2d_kpt_sview_rgb_img': '2D Keypoint',
         '2d_kpt_sview_rgb_vid': '2D Keypoint',
         '3d_kpt_sview_rgb_img': '3D Keypoint',
+        '3d_kpt_mview_rgb_img': '3D Keypoint',
         '3d_kpt_sview_rgb_vid': '3D Keypoint',
         '3d_mesh_sview_rgb_img': '3D Mesh',
         None: None
