@@ -114,6 +114,21 @@ def _box2cs(cfg, box):
     return center, scale
 
 
+def _pipeline_gpu_speedup(pipeline, device):
+    """`ToTensor` will load data to gpu.
+
+    Args:
+        pipeline: A instance of `Compose`.
+        device: A string or torch.device.
+
+    Examples:
+        _pipeline_gpu_speedup(test_pipeline, 'cuda:0')
+    """
+    for t in pipeline.transforms:
+        if t.__class__.__name__ == 'ToTensor':
+            t.device = device
+
+
 class LoadImage:
     """A simple pipeline to load image."""
 
@@ -137,7 +152,7 @@ class LoadImage:
         elif isinstance(results['img_or_path'], np.ndarray):
             results['image_file'] = ''
             if self.color_type == 'color' and self.channel_order == 'rgb':
-                img = cv2.cvtColor(results['img_or_path'], cv2.COLOR_BGR2RGB)
+                img = results['img_or_path'][:, :, ::-1]
             else:
                 img = results['img_or_path']
         else:
@@ -184,6 +199,7 @@ def _inference_single_pose_model(model,
     test_pipeline = [LoadImage(channel_order=channel_order)
                      ] + cfg.test_pipeline[1:]
     test_pipeline = Compose(test_pipeline)
+    _pipeline_gpu_speedup(test_pipeline, device)
 
     assert len(bboxes[0]) in [4, 5]
 
@@ -532,6 +548,7 @@ def inference_bottom_up_pose_model(model,
     test_pipeline = [LoadImage(channel_order=channel_order)
                      ] + cfg.test_pipeline[1:]
     test_pipeline = Compose(test_pipeline)
+    _pipeline_gpu_speedup(test_pipeline, device)
 
     # prepare data
     data = {
