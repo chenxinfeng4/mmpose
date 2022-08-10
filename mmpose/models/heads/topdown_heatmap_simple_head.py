@@ -1,13 +1,19 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import torch
 import torch.nn as nn
-from mmcv.cnn import (build_conv_layer, build_norm_layer, build_upsample_layer,
-                      constant_init, normal_init)
+from mmcv.cnn import (
+    build_conv_layer,
+    build_norm_layer,
+    build_upsample_layer,
+    constant_init,
+    normal_init,
+)
 
 from mmpose.core.evaluation import pose_pck_accuracy
 from mmpose.core.post_processing import flip_back
 from mmpose.models.builder import build_loss
 from mmpose.models.utils.ops import resize
+
 from ..builder import HEADS
 from .topdown_heatmap_base_head import TopdownHeatmapBaseHead
 
@@ -134,6 +140,7 @@ class TopdownHeatmapSimpleHead(TopdownHeatmapBaseHead):
                     kernel_size=kernel_size,
                     stride=1,
                     padding=padding))
+            layers.append(nn.Sigmoid())
 
             if len(layers) > 1:
                 self.final_layer = nn.Sequential(*layers)

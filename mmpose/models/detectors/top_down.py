@@ -8,6 +8,7 @@ from mmcv.utils.misc import deprecated_api_warning
 from mmcv.visualization.image import imshow
 
 from mmpose.core import imshow_bboxes, imshow_keypoints
+
 from .. import builder
 from ..builder import POSENETS
 from .base import BasePose
@@ -153,8 +154,10 @@ class TopDown(BasePose):
         # if return loss
         losses = dict()
         if self.with_keypoint:
+            target_weight_limit = target_weight.clone()
+            target_weight_limit[target_weight_limit == 0] = 1
             keypoint_losses = self.keypoint_head.get_loss(
-                output, target, target_weight)
+                output, target, target_weight_limit)
             losses.update(keypoint_losses)
             keypoint_accuracy = self.keypoint_head.get_accuracy(
                 output, target, target_weight)

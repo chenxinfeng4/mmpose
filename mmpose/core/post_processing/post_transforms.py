@@ -6,6 +6,7 @@
 import math
 
 import cv2
+import mmcv
 import numpy as np
 import torch
 
@@ -364,3 +365,38 @@ def affine_transform_torch(pts, t):
     pts_homo = torch.cat([pts, torch.ones(npts, 1, device=pts.device)], dim=1)
     out = torch.mm(t, torch.t(pts_homo))
     return torch.t(out[:2, :])
+
+
+def warpAffine_shortcut(src, M, dsize, *args, **kargs):
+    """Give a short cut to cv2.warpAffine when rotation==0.
+
+    Args:
+        src (np.ndarray[,,3]): input image
+        M (np.ndarray[2,3]): affine matrix
+        dsize (tuple): output image size
+        *args: args for cv2.warpAffine
+        **kargs: kargs for cv2.warpAffine
+
+    Returns:
+        np.ndarray[,,3]: output image
+    """
+    if not (M[0, 1] == 0 and M[1, 0] == 0):
+        return cv2.warpAffine(src, M, dsize, *args, **kargs)
+    trans_full = np.concatenate([M, [[0, 0, 1]]], axis=0)
+    trans_inverse = np.linalg.inv(trans_full)
+    dst_w, dst_h = dsize
+    dst_corners = np.array([[0, 0, 1], [dst_w, 0, 1], [dst_w, dst_h, 1],
+                            [0, dst_h, 1]]).T
+    src_corners = (trans_inverse @ dst_corners).astype(int)
+    src_crop_xyxy = [
+        np.min(src_corners[0]),
+        np.min(src_corners[1]),
+        np.max(src_corners[0]) - 1,
+        np.max(src_corners[1]) - 1
+    ]
+    src_crop_xyxy = np.array(src_crop_xyxy)
+
+    # return mmcv.imresize(src, (dst_h, dst_w))
+    img_crop = mmcv.imcrop(src, src_crop_xyxy, pad_fill=0)
+    img_scale = mmcv.imresize(img_crop, (dst_h, dst_w))
+    return img_scale

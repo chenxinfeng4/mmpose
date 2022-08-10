@@ -6,9 +6,9 @@ from argparse import ArgumentParser
 import cv2
 import mmcv
 import numpy as np
+import tqdm
 
-from mmpose.apis import (inference_top_down_pose_model, init_pose_model,
-                         vis_pose_result)
+from mmpose.apis import inference_top_down_pose_model, init_pose_model, vis_pose_result
 from mmpose.datasets import DatasetInfo
 
 
@@ -106,6 +106,7 @@ def main():
             dataset_info=dataset_info,
             return_heatmap=return_heatmap,
             outputs=output_layer_names)
+        continue
 
         # show the results
         vis_frame = vis_pose_result(
