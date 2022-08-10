@@ -1,1 +1,0 @@
-query_folder = 'data/rat_keypoints/2021-11-02-bwrat_side6-kp'

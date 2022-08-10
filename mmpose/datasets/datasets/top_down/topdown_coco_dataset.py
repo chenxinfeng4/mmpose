@@ -390,3 +390,100 @@ class TopDownCocoDataset(Kpt2dSviewRgbImgTopDownDataset):
                     del kpts[img_id][i]
 
         return kpts
+
+
+@DATASETS.register_module()
+class TopDownCocoDatasetTight(TopDownCocoDataset):
+    """
+    set the bbox = [0, 0, imageW, imageH]
+    set No padding
+    """
+
+    def _xywh2cs(self, x, y, w, h, padding=1):
+        """This encodes bbox(x,y,w,h) into (center, scale)
+
+        Args:
+            x, y, w, h (float): left, top, width and height
+            padding (float): bounding box padding factor
+
+        Returns:
+            center (np.ndarray[float32](2,)): center of the bbox (x, y).
+            scale (np.ndarray[float32](2,)): scale of the bbox w & h.
+        """
+        aspect_ratio = self.ann_info['image_size'][0] / self.ann_info[
+            'image_size'][1]
+        center = np.array([x + w * 0.5, y + h * 0.5], dtype=np.float32)
+
+        if (not self.test_mode) and np.random.rand() < 0.3:
+            center += 0.4 * (np.random.rand(2) - 0.5) * [w, h]
+
+        if w > aspect_ratio * h:
+            h = w * 1.0 / aspect_ratio
+        elif w < aspect_ratio * h:
+            w = h * aspect_ratio
+
+        # pixel std is 200.0
+        scale = np.array([w / 200.0, h / 200.0], dtype=np.float32)
+        # padding to include proper amount of context
+        scale = scale * padding
+
+        return center, scale
+
+    def _load_coco_keypoint_annotation_kernel(self, img_id):
+        """load annotation from COCOAPI.
+
+        Note:
+            bbox:[x1, y1, w, h]
+
+        Args:
+            img_id: coco image id
+
+        Returns:
+            dict: db entry
+        """
+        img_ann = self.coco.loadImgs(img_id)[0]
+        width = img_ann['width']
+        height = img_ann['height']
+        num_joints = self.ann_info['num_joints']
+
+        ann_ids = self.coco.getAnnIds(imgIds=img_id, iscrowd=False)
+        objs = self.coco.loadAnns(ann_ids)
+
+        # sanitize bboxes
+        valid_objs = []
+        for obj in objs:
+            obj['clean_bbox'] = [0, 0, width - 1, height - 1]
+            obj['area'] = obj['clean_bbox'][2] * obj['clean_bbox'][3]
+            valid_objs.append(obj)
+        objs = valid_objs
+
+        bbox_id = 0
+        rec = []
+        for obj in objs:
+            if 'keypoints' not in obj:
+                continue
+            joints_3d = np.zeros((num_joints, 3), dtype=np.float32)
+            joints_3d_visible = np.zeros((num_joints, 3), dtype=np.float32)
+
+            keypoints = np.array(obj['keypoints']).reshape(-1, 3)
+            joints_3d[:, :2] = keypoints[:, :2]
+            joints_3d_visible[:, :2] = np.minimum(1, keypoints[:, 2:3])
+
+            center, scale = self._xywh2cs(*obj['clean_bbox'][:4])
+
+            image_file = os.path.join(self.img_prefix, self.id2name[img_id])
+            rec.append({
+                'image_file': image_file,
+                'center': center,
+                'scale': scale,
+                'bbox': obj['clean_bbox'][:4],
+                'rotation': 0,
+                'joints_3d': joints_3d,
+                'joints_3d_visible': joints_3d_visible,
+                'dataset': self.dataset_name,
+                'bbox_score': 1,
+                'bbox_id': bbox_id
+            })
+            bbox_id = bbox_id + 1
+
+        return rec

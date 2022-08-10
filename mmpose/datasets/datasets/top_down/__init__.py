@@ -1,6 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .topdown_aic_dataset import TopDownAicDataset
-from .topdown_coco_dataset import TopDownCocoDataset
+from .topdown_coco_dataset import TopDownCocoDataset, TopDownCocoDatasetTight
 from .topdown_coco_wholebody_dataset import TopDownCocoWholeBodyDataset
 from .topdown_crowdpose_dataset import TopDownCrowdPoseDataset
 from .topdown_h36m_dataset import TopDownH36MDataset
@@ -16,6 +16,7 @@ from .topdown_posetrack18_video_dataset import TopDownPoseTrack18VideoDataset
 __all__ = [
     'TopDownAicDataset',
     'TopDownCocoDataset',
+    'TopDownCocoDatasetTight',
     'TopDownCocoWholeBodyDataset',
     'TopDownCrowdPoseDataset',
     'TopDownMpiiDataset',

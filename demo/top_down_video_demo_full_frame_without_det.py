@@ -5,9 +5,9 @@ from argparse import ArgumentParser
 
 import cv2
 import numpy as np
+import tqdm
 
-from mmpose.apis import (inference_top_down_pose_model, init_pose_model,
-                         vis_pose_result)
+from mmpose.apis import inference_top_down_pose_model, init_pose_model, vis_pose_result
 from mmpose.datasets import DatasetInfo
 
 
@@ -88,7 +88,9 @@ def main():
     # e.g. use ('backbone', ) to return backbone feature
     output_layer_names = None
 
+    pbar = tqdm.tqdm(total=cap.get(cv2.CAP_PROP_FRAME_COUNT))
     while (cap.isOpened()):
+        pbar.update(1)
         flag, img = cap.read()
         if not flag:
             break
@@ -106,6 +108,7 @@ def main():
             dataset_info=dataset_info,
             return_heatmap=return_heatmap,
             outputs=output_layer_names)
+        continue
 
         # show the results
         vis_img = vis_pose_result(

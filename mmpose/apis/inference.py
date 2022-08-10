@@ -152,7 +152,8 @@ class LoadImage:
         elif isinstance(results['img_or_path'], np.ndarray):
             results['image_file'] = ''
             if self.color_type == 'color' and self.channel_order == 'rgb':
-                img = results['img_or_path'][:, :, ::-1]
+                # img = results['img_or_path'][:, :, ::-1]
+                img = cv2.cvtColor(results['img_or_path'], cv2.COLOR_BGR2RGB)
             else:
                 img = results['img_or_path']
         else:

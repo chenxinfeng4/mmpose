@@ -107,7 +107,7 @@ def parse_args():
     parser.add_argument('config', help='Config file')
     parser.add_argument('checkpoint', help='Checkpoint file')
     parser.add_argument(
-        '--num_gpus', default=4, type=int, help='Device used for inference')
+        'num_gpus', default=4, type=int, help='Device used for inference')
     args = parser.parse_args()
     return args
 
