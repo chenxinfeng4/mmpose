@@ -490,7 +490,7 @@ class TopDownCocoDatasetTight(TopDownCocoDataset):
 
             center, scale = self._xywh2cs(*obj['clean_bbox'][:4])
 
-            image_file = os.path.join(self.img_prefix, self.id2name[img_id])
+            image_file = osp.join(self.img_prefix, self.id2name[img_id])
             rec.append({
                 'image_file': image_file,
                 'center': center,
