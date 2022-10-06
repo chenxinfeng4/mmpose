@@ -8,7 +8,7 @@ _base_ = [
 load_from = 'work_dirs/res50_coco_ball_512x512_ZJF/latest.pth'
 # load_from = None
 
-# params 
+# params
 evaluation = dict(interval=30, metric='mAP', save_best='AP')
 
 optimizer = dict(
@@ -47,7 +47,6 @@ model = dict(
         post_process='default',
         shift_heatmap=True,
         modulate_kernel=11))
-
 
 data_cfg = dict(
     image_size=[512, 512],
@@ -115,14 +114,15 @@ data = dict(
     val_dataloader=dict(samples_per_gpu=1),
     test_dataloader=dict(samples_per_gpu=1),
     train=dict(
-        type = 'ConcatDataset',
-        datasets = [dict(
-            type='TopDownCocoDatasetTight',
-            ann_file='data/ball/ZJF_ball_train.json',
-            img_prefix='data/ball/ZJF_ball/',
-            data_cfg=data_cfg,
-            pipeline=train_pipeline,
-            dataset_info={{_base_.dataset_info}}),
+        type='ConcatDataset',
+        datasets=[
+            dict(
+                type='TopDownCocoDatasetTight',
+                ann_file='data/ball/ZJF_ball_train.json',
+                img_prefix='data/ball/ZJF_ball/',
+                data_cfg=data_cfg,
+                pipeline=train_pipeline,
+                dataset_info={{_base_.dataset_info}}),
         ]),
     val=dict(
         type='TopDownCocoDatasetTight',
