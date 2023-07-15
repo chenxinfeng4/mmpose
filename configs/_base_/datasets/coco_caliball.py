@@ -5,7 +5,7 @@ keypoint_info = dict({
 })
 skeleton_info = dict()
 joint_weights = [1.0],
-sigmas = [0.026]
+sigmas = [0.014]
 dataset_info = dict(
     dataset_name='coco',
     paper_info=dict(
