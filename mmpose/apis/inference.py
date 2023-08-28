@@ -119,8 +119,10 @@ def _inference_single_pose_model(model,
             has_bbox_xywh2cs = True
             break
     if not has_bbox_xywh2cs:
+        # _test_pipeline.insert(
+        #     0, dict(type='TopDownGetBboxCenterScale', padding=1.25))
         _test_pipeline.insert(
-            0, dict(type='TopDownGetBboxCenterScale', padding=1.25))
+            0, dict(type='TopDownGetBboxCenterScale', padding=1))
     test_pipeline = Compose(_test_pipeline)
     _pipeline_gpu_speedup(test_pipeline, next(model.parameters()).device)
 
